@@ -168,153 +168,63 @@ st.dataframe(
 
 
 
+
 # ==========================
 # 三、安全告警中心
 # ==========================
 
-st.header(
-    "二、安全告警中心"
-)
+st.header("二、安全告警中心")
 
+# 修改点 1：使用 enumerate 获取唯一索引 idx
+for idx, alarm in enumerate(alarms):
 
-
-for alarm in alarms:
-
-
-    title = (
-        f"{alarm['level']} - {alarm['event']}"
-    )
-
-
+    title = f"{alarm['level']} - {alarm['event']}"
 
     # 风险等级颜色显示
-
     if alarm["level"] == "高危":
-
         st.error(title)
-
-
     elif alarm["level"] == "中危":
-
         st.warning(title)
-
-
     else:
-
         st.info(title)
 
-
-
     # 展开详情
-
-    with st.expander(
-        "查看事件详情"
-    ):
-
-
-
-        st.write(
-            "来源IP：",
-            alarm["source_ip"]
-        )
-
-
-        st.write(
-            "攻击设备：",
-            alarm["device"]
-        )
-
-
-        st.write(
-            "发生时间：",
-            alarm["time"]
-        )
-
-
-        st.write(
-            "事件描述：",
-            alarm["description"]
-        )
-
-
+    with st.expander("查看事件详情"):
+        st.write("来源IP：", alarm["source_ip"])
+        st.write("攻击设备：", alarm["device"])
+        st.write("发生时间：", alarm["time"])
+        st.write("事件描述：", alarm["description"])
+        
+        # 新增点：展示我们刚才在 mock_stream 中生成的底层原始报文
+        if "raw_payload" in alarm:
+            st.write("原始报文：")
+            st.code(alarm["raw_payload"])
 
         st.divider()
 
-
-
-        # AI分析按钮
-
-        if st.button(
-            f"AI研判：{alarm['event']}",
-            key=f"ai_{alarm['event']}"
-        ):
-
-
-            with st.spinner(
-                "AI正在分析安全事件..."
-            ):
-
-
+        # AI分析按钮 (修改点 2：在 key 中加入 idx 确保唯一性)
+        if st.button(f"AI研判：{alarm['event']}", key=f"ai_{idx}_{alarm['event']}"):
+            with st.spinner("AI正在分析安全事件..."):
                 result = analyze_event(alarm)
-
-
-
             st.info(result)
 
-
-
-
-        # 自动处理按钮
-
-        if st.button(
-            f"自动处理：{alarm['event']}",
-            key=f"action_{alarm['event']}"
-        ):
-
-
-            with st.spinner(
-                "正在执行自动化响应..."
-            ):
-
-
-
-                action_result = execute_action(
-                    alarm
-                )
-
-
+        # 自动处理按钮 (修改点 3：在 key 中加入 idx 确保唯一性)
+        if st.button(f"自动处理：{alarm['event']}", key=f"action_{idx}_{alarm['event']}"):
+            with st.spinner("正在执行自动化响应..."):
+                action_result = execute_action(alarm)
 
             # 保存审计记录
-
-            save_audit(
-                alarm,
-                action_result,
-                "AI分析完成"
-            )
-
-
+            save_audit(alarm, action_result, "AI分析完成")
 
             st.success(
-f"""
-自动化处理完成！
+                f"""
+                自动化处理完成！
 
-
-动作：
-{action_result['action']}
-
-
-目标：
-{action_result['target']}
-
-
-设备：
-{action_result['device']}
-
-
-状态：
-{action_result['status']}
-
-"""
+                动作：{action_result['action']}
+                目标：{action_result['target']}
+                设备：{action_result['device']}
+                状态：{action_result['status']}
+                """
             )
 
 
