@@ -53,5 +53,104 @@
         "action": "封禁攻击IP",
         "target": "172.16.1.50",
         "result": "执行成功"
+    },
+    {
+        "event_id": "SEC-006",
+        "time": "2026-08-24 13:57:11",
+        "event": "端口扫描",
+        "source_ip": "10.10.1.25",
+        "device": "流量探针",
+        "ai_analysis": "已执行自动化编排流程",
+        "action": "封禁攻击IP",
+        "target": "10.10.1.25",
+        "result": "执行成功"
+    },
+    {
+        "event_id": "SEC-007",
+        "time": "2026-08-24 13:57:18",
+        "event": "XSS跨站脚本",
+        "source_ip": "8.8.8.8",
+        "device": "IDS/IPS",
+        "ai_analysis": "已执行自动化编排流程",
+        "action": "封禁攻击IP",
+        "target": "8.8.8.8",
+        "result": "执行成功"
+    },
+    {
+        "event_id": "SEC-008",
+        "time": "2026-08-24 13:57:34",
+        "event": "XSS跨站脚本",
+        "source_ip": "8.8.8.8",
+        "device": "IDS/IPS",
+        "ai_analysis": "已执行自动化编排流程",
+        "action": "拒绝执行封禁",
+        "target": "8.8.8.8",
+        "result": "校验拦截 (命中核心资产白名单，防止误封)"
+    },
+    {
+        "event_id": "SEC-009",
+        "time": "2026-08-24 14:12:42",
+        "event": "异常登录",
+        "source_ip": "192.168.1.100",
+        "device": "IDS/IPS",
+        "ai_analysis": "已执行自动化编排流程",
+        "action": "封禁攻击IP",
+        "target": "192.168.1.100",
+        "result": "执行成功"
+    },
+    {
+        "event_id": "SEC-010",
+        "time": "2026-08-24 14:13:04",
+        "event": "异常登录",
+        "source_ip": "192.168.1.100",
+        "device": "IDS/IPS",
+        "ai_analysis": "已执行自动化编排流程",
+        "action": "封禁攻击IP",
+        "target": "192.168.1.100",
+        "result": "执行成功"
+    },
+    {
+        "event_id": "SEC-011",
+        "time": "2026-08-24 14:13:17",
+        "event": "异常登录",
+        "source_ip": "192.168.1.100",
+        "device": "IDS/IPS",
+        "ai_analysis": "已执行自动化编排流程",
+        "action": "标记并持续监控",
+        "target": "192.168.1.100",
+        "result": "执行成功 (威胁等级低，已记录入黑基线)"
+    },
+    {
+        "event_id": "SEC-012",
+        "time": "2026-08-24 14:13:27",
+        "event": "异常登录",
+        "source_ip": "192.168.1.100",
+        "device": "流量探针",
+        "ai_analysis": "已执行自动化编排流程",
+        "action": "常规封禁源IP",
+        "target": "192.168.1.100",
+        "result": "执行成功 (已阻断该IP的后续连接)"
+    },
+    {
+        "event_id": "SEC-013",
+        "time": "2026-08-24 14:13:34",
+        "event": "DDoS流量激增",
+        "source_ip": "172.16.1.50",
+        "device": "流量探针",
+        "ai_analysis": "已执行自动化编排流程",
+        "action": "跨设备联合封禁与隔离",
+        "target": "172.16.1.50",
+        "result": "执行成功 (已全面切断该IP网络访问，自动拉起应急预案)"
+    },
+    {
+        "event_id": "SEC-014",
+        "time": "2026-08-24 14:41:59",
+        "event": "端口扫描",
+        "source_ip": "10.10.1.25",
+        "device": "流量探针",
+        "ai_analysis": "由Agent自主触发: playbook_high_risk",
+        "action": "跨设备联合封禁与隔离",
+        "target": "10.10.1.25",
+        "result": "执行成功 (已全面切断该IP网络访问，自动拉起应急预案)"
     }
 ]
