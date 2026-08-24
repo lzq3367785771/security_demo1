@@ -40,7 +40,9 @@ security_demo/
 │   ├── audit.py           # 审计日志保存模块
 │   └── device.py          # 设备状态读取模块
 └── README.md
-🛠️ 环境依赖与配置
+
+
+##🛠️ 环境依赖与配置
 Python 环境：建议使用 Python 3.8 或以上版本。
 
 安装依赖包：
