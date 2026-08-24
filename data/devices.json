@@ -1,0 +1,34 @@
+[
+    {
+        "name": "防火墙",
+        "type": "Firewall",
+        "ip": "192.168.1.1",
+        "status": "在线",
+        "cpu": 35,
+        "memory": 42
+    },
+    {
+        "name": "WAF",
+        "type": "Web Application Firewall",
+        "ip": "192.168.1.2",
+        "status": "在线",
+        "cpu": 28,
+        "memory": 36
+    },
+    {
+        "name": "IDS/IPS",
+        "type": "Intrusion Detection",
+        "ip": "192.168.1.3",
+        "status": "在线",
+        "cpu": 45,
+        "memory": 50
+    },
+    {
+        "name": "堡垒机",
+        "type": "Bastion Host",
+        "ip": "192.168.1.4",
+        "status": "在线",
+        "cpu": 20,
+        "memory": 30
+    }
+]

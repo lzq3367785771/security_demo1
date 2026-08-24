@@ -1,0 +1,29 @@
+[
+    {
+        "time": "2026-08-21 10:30:21",
+        "event": "SQL注入攻击",
+        "source_ip": "10.10.1.25",
+        "target": "Web服务器",
+        "device": "WAF",
+        "level": "高危",
+        "description": "检测到HTTP请求中存在SQL注入特征"
+    },
+    {
+        "time": "2026-08-21 11:05:12",
+        "event": "异常登录",
+        "source_ip": "8.8.8.8",
+        "target": "堡垒机",
+        "device": "堡垒机",
+        "level": "中危",
+        "description": "管理员账号连续登录失败"
+    },
+    {
+        "time": "2026-08-21 12:20:00",
+        "event": "端口扫描",
+        "source_ip": "172.16.1.50",
+        "target": "服务器集群",
+        "device": "IDS/IPS",
+        "level": "低危",
+        "description": "发现大量异常端口访问行为"
+    }
+]

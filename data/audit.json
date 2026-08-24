@@ -1,0 +1,57 @@
+[
+    {
+        "event_id": "SEC-001",
+        "time": "2026-08-21 18:27:54",
+        "event": "SQL注入攻击",
+        "source_ip": "10.10.1.25",
+        "device": "WAF",
+        "ai_analysis": "AI分析完成",
+        "action": "封禁攻击IP",
+        "target": "10.10.1.25",
+        "result": "执行成功"
+    },
+    {
+        "event_id": "SEC-002",
+        "time": "2026-08-24 09:17:03",
+        "event": "SQL注入攻击",
+        "source_ip": "10.10.1.25",
+        "device": "WAF",
+        "ai_analysis": "AI分析完成",
+        "action": "封禁攻击IP",
+        "target": "10.10.1.25",
+        "result": "执行成功"
+    },
+    {
+        "event_id": "SEC-003",
+        "time": "2026-08-24 09:27:36",
+        "event": "异常登录",
+        "source_ip": "8.8.8.8",
+        "device": "堡垒机",
+        "ai_analysis": "AI分析完成",
+        "action": "封禁攻击IP",
+        "target": "8.8.8.8",
+        "result": "执行成功"
+    },
+    {
+        "event_id": "SEC-004",
+        "time": "2026-08-24 09:27:51",
+        "event": "SQL注入攻击",
+        "source_ip": "10.10.1.25",
+        "device": "WAF",
+        "ai_analysis": "AI分析完成",
+        "action": "封禁攻击IP",
+        "target": "10.10.1.25",
+        "result": "执行成功"
+    },
+    {
+        "event_id": "SEC-005",
+        "time": "2026-08-24 09:28:01",
+        "event": "端口扫描",
+        "source_ip": "172.16.1.50",
+        "device": "IDS/IPS",
+        "ai_analysis": "AI分析完成",
+        "action": "封禁攻击IP",
+        "target": "172.16.1.50",
+        "result": "执行成功"
+    }
+]
