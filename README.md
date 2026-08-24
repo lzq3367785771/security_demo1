@@ -40,57 +40,59 @@ security_demo/
 │   ├── audit.py           # 审计日志保存模块
 │   └── device.py          # 设备状态读取模块
 └── README.md
+```
 
+## 🛠️ 环境依赖与配置
 
-##🛠️ 环境依赖与配置
-Python 环境：建议使用 Python 3.8 或以上版本。
+**Python 环境**：建议使用 Python 3.8 或以上版本。
 
-安装依赖包：
+**安装依赖包**：
 在 VS Code 终端 (PowerShell) 中执行以下命令安装必要依赖：
 
-PowerShell
+```powershell
 pip install streamlit pandas openai
-配置大模型 API：
-打开 config/config.py，填入您所使用的大模型 API 密钥。目前代码默认使用的是 deepseek-v4-flash 模型，如果使用其他模型（如 Qwen），请同步修改 modules/ai.py 中的 model 参数。
+```
 
-🚀 启动与使用指南 (Windows + VS Code)
+**配置大模型 API**：
+打开 `config/config.py`，填入您所使用的大模型 API 密钥。目前代码默认使用的是 deepseek-v4-flash 模型，如果使用其他模型（如 Qwen），请同步修改 `modules/ai.py` 中的 model 参数。
+
+## 🚀 启动与使用指南 (Windows + VS Code)
+
 本项目采用前后端解耦的数据流模式，需要同时运行日志注入脚本和前端页面。推荐利用 VS Code 的“拆分终端”功能：
 
-步骤 1：启动后台日志模拟流
+### 步骤 1：启动后台日志模拟流
 
 在 VS Code 中打开新建一个终端。
 
 运行以下命令，系统将开始每隔几秒随机生成攻击日志：
 
-PowerShell
+```powershell
 python mock_stream.py
-(该进程请保持在后台运行，不要关闭)
+```
+*(该进程请保持在后台运行，不要关闭)*
 
-步骤 2：启动可视化平台
+### 步骤 2：启动可视化平台
 
-在 VS Code 终端面板点击右上角的 “拆分终端” 按钮（或按 Ctrl + Shift + 5）。
+在 VS Code 终端面板点击右上角的 “拆分终端” 按钮（或按 `Ctrl + Shift + 5`）。
 
 在新的终端窗口中，运行 Web 服务：
 
-PowerShell
+```powershell
 streamlit run app.py
-浏览器将自动弹出控制台页面（默认地址 http://localhost:8501）。
+```
+浏览器将自动弹出控制台页面（默认地址 `http://localhost:8501`）。
 
-步骤 3：体验 Agent 闭环
+### 步骤 3：体验 Agent 闭环
 
-在页面上方的“安全告警中心”中，展开任意一条告警。
+1. 在页面上方的“安全告警中心”中，展开任意一条告警。
+2. 点击 **“🤖 Agent 自主研判与处置”** 按钮。
+3. 观察 Agent 是如何解析生涩报文、制定防御剧本，并在命中“核心资产”时被底层合规机制拦截退回的。
+4. 在页面底部的“安全审计记录”表中，可以按处理状态（如“校验拦截”或“执行成功”）动态过滤查看 Agent 的历史操作。
 
-点击 “🤖 Agent 自主研判与处置” 按钮。
+## 🔮 后续演进路线
 
-观察 Agent 是如何解析生涩报文、制定防御剧本，并在命中“核心资产”时被底层合规机制拦截退回的。
-
-在页面底部的“安全审计记录”表中，可以按处理状态（如“校验拦截”或“执行成功”）动态过滤查看 Agent 的历史操作。
-
-🔮 后续演进路线
 本 Demo 为后续接入真实网络环境奠定了架构基础。下一步可演进方向包括：
 
-真实设备接入：将 mock_stream.py 替换为 Elasticsearch / Logstash / Syslog 探针接口，直连真实网关。
-
-SOAR 动作实体化：将 action.py 中的占位符升级为真实的 REST API 调用（如对接防火墙的阻断接口）。
-
-多智能体 (Multi-Agent)：引入 LangGraph 框架，将单一研判 Agent 拆分为数据清洗 Agent、研判 Agent 和 审批 Agent 的协作网络。
+- **真实设备接入**：将 `mock_stream.py` 替换为 Elasticsearch / Logstash / Syslog 探针接口，直连真实网关。
+- **SOAR 动作实体化**：将 `action.py` 中的占位符升级为真实的 REST API 调用（如对接防火墙的阻断接口）。
+- **多智能体 (Multi-Agent)**：引入 LangGraph 框架，将单一研判 Agent 拆分为数据清洗 Agent、研判 Agent 和 审批 Agent 的协作网络。
