@@ -152,5 +152,104 @@
         "action": "跨设备联合封禁与隔离",
         "target": "10.10.1.25",
         "result": "执行成功 (已全面切断该IP网络访问，自动拉起应急预案)"
+    },
+    {
+        "event_id": "SEC-015",
+        "time": "2026-08-25 10:00:45",
+        "event": "端口扫描",
+        "source_ip": "10.10.1.25",
+        "device": "堡垒机",
+        "ai_analysis": "由Agent自主触发: playbook_low_risk",
+        "action": "标记并持续监控",
+        "target": "10.10.1.25",
+        "result": "执行成功 (威胁等级低，已记录入黑基线)"
+    },
+    {
+        "event_id": "SEC-016",
+        "time": "2026-08-25 10:18:23",
+        "event": "SQL注入攻击",
+        "source_ip": "172.16.1.50",
+        "device": "流量探针",
+        "ai_analysis": "由Agent自主触发: playbook_high_risk",
+        "action": "跨设备联合封禁与隔离",
+        "target": "172.16.1.50",
+        "result": "执行成功 (已全面切断该IP网络访问，自动拉起应急预案)"
+    },
+    {
+        "event_id": "SEC-017",
+        "time": "2026-08-25 10:27:59",
+        "event": "SQL注入攻击",
+        "source_ip": "172.16.1.50",
+        "device": "流量探针",
+        "ai_analysis": "由Agent自主触发: playbook_high_risk",
+        "action": "跨设备联合封禁与隔离",
+        "target": "172.16.1.50",
+        "result": "执行成功 (已全面切断该IP网络访问，自动拉起应急预案)"
+    },
+    {
+        "event_id": "SEC-018",
+        "time": "2026-08-25 10:41:16",
+        "event": "端口扫描",
+        "source_ip": "10.10.1.25",
+        "device": "堡垒机",
+        "ai_analysis": "全自动引擎触发: playbook_low_risk",
+        "action": "标记并持续监控",
+        "target": "10.10.1.25",
+        "result": "执行成功 (威胁等级低，已记录入黑基线)"
+    },
+    {
+        "event_id": "SEC-019",
+        "time": "2026-08-25 10:41:33",
+        "event": "端口扫描",
+        "source_ip": "10.10.1.25",
+        "device": "堡垒机",
+        "ai_analysis": "全自动引擎触发: playbook_low_risk",
+        "action": "标记并持续监控",
+        "target": "10.10.1.25",
+        "result": "执行成功 (威胁等级低，已记录入黑基线)"
+    },
+    {
+        "event_id": "SEC-020",
+        "time": "2026-08-25 10:41:55",
+        "event": "SQL注入攻击",
+        "source_ip": "172.16.1.50",
+        "device": "流量探针",
+        "ai_analysis": "全自动引擎触发: playbook_high_risk",
+        "action": "跨设备联合封禁与隔离",
+        "target": "172.16.1.50",
+        "result": "执行成功 (已全面切断该IP网络访问，自动拉起应急预案)"
+    },
+    {
+        "event_id": "SEC-021",
+        "time": "2026-08-25 11:20:19",
+        "event": "SQL注入攻击",
+        "source_ip": "8.8.8.8",
+        "device": "堡垒机",
+        "ai_analysis": "单次审核触发: playbook_high_risk",
+        "action": "拒绝执行编排",
+        "target": "8.8.8.8",
+        "result": "校验拦截 (命中核心资产白名单，动作中止)"
+    },
+    {
+        "event_id": "SEC-022",
+        "time": "2026-08-25 11:22:03",
+        "event": "SQL注入攻击",
+        "source_ip": "45.33.2.19",
+        "device": "堡垒机",
+        "ai_analysis": "单次审核触发: playbook_high_risk",
+        "action": "跨设备联合封禁与隔离",
+        "target": "45.33.2.19",
+        "result": "执行成功 (已全面切断该IP网络访问，自动拉起应急预案)"
+    },
+    {
+        "event_id": "SEC-023",
+        "time": "2026-08-25 11:57:40",
+        "event": "XSS跨站脚本",
+        "source_ip": "8.8.8.8",
+        "device": "WAF",
+        "ai_analysis": "单次审核触发: playbook_low_risk",
+        "action": "拒绝执行编排",
+        "target": "8.8.8.8",
+        "result": "校验拦截 (命中核心资产白名单，动作中止)"
     }
 ]
