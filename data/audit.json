@@ -251,5 +251,71 @@
         "action": "拒绝执行编排",
         "target": "8.8.8.8",
         "result": "校验拦截 (命中核心资产白名单，动作中止)"
+    },
+    {
+        "event_id": "SEC-024",
+        "time": "2026-08-25 14:16:44",
+        "event": "XSS跨站脚本",
+        "source_ip": "8.8.8.8",
+        "device": "WAF",
+        "ai_analysis": "单次审核触发: playbook_low_risk",
+        "action": "拒绝执行编排",
+        "target": "8.8.8.8",
+        "result": "校验拦截 (命中核心资产白名单，动作中止)"
+    },
+    {
+        "event_id": "SEC-025",
+        "time": "2026-08-25 14:18:31",
+        "event": "XSS跨站脚本",
+        "source_ip": "8.8.8.8",
+        "device": "WAF",
+        "ai_analysis": "单次审核触发: playbook_low_risk",
+        "action": "拒绝执行编排",
+        "target": "8.8.8.8",
+        "result": "校验拦截 (命中核心资产白名单，动作中止)"
+    },
+    {
+        "event_id": "SEC-026",
+        "time": "2026-08-25 14:22:42",
+        "event": "XSS跨站脚本",
+        "source_ip": "8.8.8.8",
+        "device": "WAF",
+        "ai_analysis": "单次审核触发: playbook_low_risk",
+        "action": "拒绝执行编排",
+        "target": "8.8.8.8",
+        "result": "校验拦截 (命中核心资产白名单，动作中止)"
+    },
+    {
+        "event_id": "SEC-027",
+        "time": "2026-08-25 16:24:58",
+        "event": "XSS跨站脚本",
+        "source_ip": "45.33.2.19",
+        "device": "流量探针",
+        "ai_analysis": "单次审核触发: playbook_low_risk",
+        "action": "标记并持续监控",
+        "target": "45.33.2.19",
+        "result": "执行成功 (威胁等级低，已记录入黑基线)"
+    },
+    {
+        "event_id": "SEC-028",
+        "time": "2026-08-25 16:45:35",
+        "event": "大促业务峰值",
+        "source_ip": "10.10.1.25",
+        "device": "堡垒机",
+        "ai_analysis": "单次审核触发: playbook_low_risk",
+        "action": "标记并持续监控",
+        "target": "10.10.1.25",
+        "result": "执行成功 (威胁等级低，已记录入黑基线)"
+    },
+    {
+        "event_id": "SEC-029",
+        "time": "2026-08-25 16:52:58",
+        "event": "端口扫描",
+        "source_ip": "192.168.1.100",
+        "device": "堡垒机",
+        "ai_analysis": "单次审核触发: playbook_medium_risk",
+        "action": "常规封禁源IP",
+        "target": "192.168.1.100",
+        "result": "执行成功 (已阻断该IP的后续连接)"
     }
 ]
