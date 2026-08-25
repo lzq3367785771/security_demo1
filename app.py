@@ -249,30 +249,42 @@ elif menu == "二、安全告警中心":
                     st.code(selected_alarm["raw_payload"])
                     
                 st.divider()
+
                 col_btn1, col_btn2, _ = st.columns([2, 3, 5])
                 
                 with col_btn1:
                     if st.button("✖️ 关闭详情", key="close_detail"):
                         st.session_state.view_detail_alarm = None
                         st.rerun()
-                        
+                
+                # 记录按钮的点击状态，不要在局部列(Column)内部直接渲染内容
+                agent_clicked = False
                 with col_btn2:
                     if st.button("🤖 交由 Agent 单独研判与处置", type="primary", key="single_agent_process"):
-                        with st.spinner("🧠 Agent 正在研判..."):
-                            is_mal, conf = ml_engine.predict_traffic(selected_alarm.get("features", {}))
-                            ml_res_dict = {"is_malicious": is_mal, "confidence": round(conf * 100 if is_mal else (1 - conf) * 100, 1), "rule_hit": selected_alarm.get("rule_hit")}
-                            analysis_text, agent_decision = analyze_event(selected_alarm, ml_result=ml_res_dict)
-                            
-                        st.markdown("##### 📋 Agent 研判报告")
-                        st.info(analysis_text)
+                        agent_clicked = True
+                
+                # ==========================================
+                # 核心修复点：跳出 col_btn2 的狭窄列宽限制
+                # 在最外层的全宽容器中进行渲染
+                # ==========================================
+                if agent_clicked:
+                    st.divider()
+                    with st.spinner("🧠 Agent 正在研判..."):
+                        is_mal, conf = ml_engine.predict_traffic(selected_alarm.get("features", {}))
+                        ml_res_dict = {"is_malicious": is_mal, "confidence": round(conf * 100 if is_mal else (1 - conf) * 100, 1), "rule_hit": selected_alarm.get("rule_hit")}
+                        analysis_text, agent_decision = analyze_event(selected_alarm, ml_result=ml_res_dict)
                         
-                        if agent_decision:
-                            playbook = agent_decision.get("playbook_name")
-                            action_result = execute_action(selected_alarm, playbook)
-                            save_audit(selected_alarm, action_result, f"单次审核触发: {playbook}")
-                            st.success(f"✅ 动作已执行: {action_result['action']}")
-                        else:
-                            st.warning("无需防御指令。")
+                    with st.container(border=True):
+                        st.markdown("##### 📋 Agent 研判报告")
+                        st.markdown(analysis_text)
+                    
+                    if agent_decision:
+                        playbook = agent_decision.get("playbook_name")
+                        action_result = execute_action(selected_alarm, playbook)
+                        save_audit(selected_alarm, action_result, f"单次审核触发: {playbook}")
+                        st.success(f"✅ 动作已执行: {action_result['action']}")
+                    else:
+                        st.warning("无需防御指令。")
         st.markdown("---")
 
     with st.expander("查看原始所有告警数据 (Raw Logs)"):
