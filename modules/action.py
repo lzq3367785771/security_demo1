@@ -92,3 +92,54 @@ def execute_action(alarm, agent_playbook=None):
         result = playbook_router(alarm, source_ip)
     
     return result
+
+
+def execute_human_decision(alarm, decision_action):
+    """
+    执行人工专家确认后的最终决策。
+
+    Agent 只提供建议，本函数只接受专家表单最终提交的动作。
+    """
+    source_ip = alarm.get("source_ip", "")
+
+    # 放行和观察属于非破坏性动作，可以直接执行
+    if decision_action == "标记为误报并放行 (False Positive / Allow)":
+        time.sleep(0.5)
+        return {
+            "action": "标记为误报并放行",
+            "target": source_ip,
+            "device": "SOC 中控台 / 告警中心",
+            "status": "执行成功（人工专家确认该告警为误报）"
+        }
+
+    if decision_action == "加入重点观察名单 (Watchlist)":
+        time.sleep(0.5)
+        return {
+            "action": "加入重点观察名单",
+            "target": source_ip,
+            "device": "流量探针 / 日志中心",
+            "status": "执行成功（已进入重点持续监控名单）"
+        }
+
+    # 封禁、隔离、查杀等动作仍需经过白名单保护
+    if source_ip in WHITELIST_IPS:
+        return {
+            "action": "拒绝执行破坏性动作",
+            "target": source_ip,
+            "device": "SOC 中控台",
+            "status": "校验拦截（目标属于核心资产白名单）"
+        }
+
+    if decision_action == "封禁攻击源 IP (Block IP)":
+        return playbook_medium_risk(alarm, source_ip)
+
+    if decision_action == "下发深度病毒查杀 (Deep Scan)":
+        time.sleep(1)
+        return {
+            "action": "下发深度病毒查杀",
+            "target": source_ip,
+            "device": "EDR / 终端安全管理平台",
+            "status": "执行成功（已下发深度扫描与查杀任务）"
+        }
+
+    raise ValueError(f"不支持的人工处置动作：{decision_action}")

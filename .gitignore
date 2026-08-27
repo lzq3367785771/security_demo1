@@ -1,0 +1,14 @@
+
+# Python cache
+__pycache__/
+*.pyc
+
+# ChromaDB local database
+data/chroma_db/
+data/chroma_db.backup*/
+data/chroma_db.backup_*/
+data/audit.json
+data/dynamic_logs.jsonl
+
+# Local embedding model
+all-MiniLM-L6-v2/
