@@ -10,9 +10,10 @@ import re
 from modules.device import get_device_status
 from modules.alarm import get_alarm_list
 from modules.ai import analyze_event
-from modules.action import execute_action
+from modules.action import execute_action, execute_human_decision
 from modules.audit import save_audit
 from modules.ml_engine import ml_engine
+from modules.knowledge_base import kb_engine
 
 # ==========================
 # 页面配置
@@ -124,8 +125,34 @@ elif menu == "二、安全告警中心":
                 should_process = True
 
             if should_process:
-                ml_res_dict = {"is_malicious": is_malicious, "confidence": confidence, "rule_hit": rule_name}
-                analysis_text, agent_decision = analyze_event(alarm, ml_result=ml_res_dict)
+                ml_res_dict = {
+                    "is_malicious": is_malicious,
+                    "confidence": confidence,
+                    "rule_hit": rule_name
+                }
+
+                event_family = (
+                    kb_engine._infer_event_family(
+                        alarm.get(
+                            "event",
+                            "未知告警"
+                        )
+                    )
+                )
+
+                similar_cases = (
+                    kb_engine.query_similar_cases(
+                        alarm,
+                        n_results=5
+                    )
+                )
+
+                analysis_text, agent_decision = analyze_event(
+                    alarm,
+                    ml_result=ml_res_dict,
+                    similar_cases=similar_cases,
+                    event_family=event_family
+                )
 
                 if agent_decision:
                     playbook = agent_decision.get("playbook_name")
@@ -204,10 +231,49 @@ elif menu == "二、安全告警中心":
             status_text = st.empty()
             
             for i, alarm in enumerate(danger_list):
-                status_text.text(f"🧠 Agent 正在处理：{alarm.get('level', '')}-{alarm.get('event', '')}...")
-                is_malicious, conf = ml_engine.predict_traffic(alarm.get("features", {}))
-                ml_res_dict = {"is_malicious": is_malicious, "confidence": round(conf * 100 if is_malicious else (1 - conf) * 100, 1), "rule_hit": alarm.get("rule_hit")}
-                _, agent_decision = analyze_event(alarm, ml_result=ml_res_dict)
+                status_text.text(
+                    f"🧠 Agent 正在处理："
+                    f"{alarm.get('level', '')}-"
+                    f"{alarm.get('event', '')}..."
+                )
+
+                is_malicious, conf = ml_engine.predict_traffic(
+                    alarm.get("features", {})
+                )
+
+                ml_res_dict = {
+                    "is_malicious": is_malicious,
+                    "confidence": round(
+                        conf * 100
+                        if is_malicious
+                        else (1 - conf) * 100,
+                        1
+                    ),
+                    "rule_hit": alarm.get("rule_hit")
+                }
+
+                event_family = (
+                    kb_engine._infer_event_family(
+                        alarm.get(
+                            "event",
+                            "未知告警"
+                        )
+                    )
+                )
+
+                similar_cases = (
+                    kb_engine.query_similar_cases(
+                        alarm,
+                        n_results=5
+                    )
+                )
+
+                _, agent_decision = analyze_event(
+                    alarm,
+                    ml_result=ml_res_dict,
+                    similar_cases=similar_cases,
+                    event_family=event_family
+                )
                 
                 if agent_decision:
                     playbook = agent_decision.get("playbook_name")
@@ -234,57 +300,384 @@ elif menu == "二、安全告警中心":
                 if rule_hit:
                     st.error(f"🚨 **正则过滤网前置拦截：** 明确命中【{rule_hit}】")
                 
-                if "features" in selected_alarm:
-                    features = selected_alarm["features"]
+                # ==================================================
+                # 第一阶段：KNN 机器学习初判
+                # ==================================================
+                st.markdown("##### ① KNN 机器学习初判")
+
+                features = selected_alarm.get("features", {})
+                if features:
                     f1, f2, f3 = st.columns(3)
                     f1.metric("连接频率", features.get("conn_freq", 0))
                     f2.metric("包大小", features.get("packet_size", 0))
                     f3.metric("错误率", features.get("error_rate", 0))
-                    
+
                     is_mal, conf = ml_engine.predict_traffic(features)
-                    if is_mal: st.error(f"机器初判结果：异常/恶意流量 (置信度 {conf*100:.1f}%)")
-                    else: st.success(f"机器初判结果：正常流量 (置信度 {(1-conf)*100:.1f}%)")
-                
+                else:
+                    is_mal, conf = False, 0.0
+                    st.warning("当前告警没有可供 KNN 分析的特征数据。")
+
+                knn_confidence = round(
+                    conf * 100 if is_mal else (1 - conf) * 100,
+                    1
+                )
+
+                if is_mal:
+                    st.error(
+                        f"机器初判结果：异常/恶意流量 "
+                        f"(置信度 {knn_confidence:.1f}%)"
+                    )
+                else:
+                    st.success(
+                        f"机器初判结果：正常流量 "
+                        f"(置信度 {knn_confidence:.1f}%)"
+                    )
+
                 if "raw_payload" in selected_alarm:
                     st.code(selected_alarm["raw_payload"])
-                    
+
+                # 为每条告警建立独立的页面状态
+                alarm_identity = "|".join([
+                    str(selected_alarm.get("time", "")),
+                    str(selected_alarm.get("source_ip", "")),
+                    str(selected_alarm.get("event", ""))
+                ])
+
+                agent_result_key = f"agent_review::{alarm_identity}"
+                expert_action_key = f"expert_action::{alarm_identity}"
+
+                expert_actions = [
+                    "封禁攻击源 IP (Block IP)",
+                    "标记为误报并放行 (False Positive / Allow)",
+                    "下发深度病毒查杀 (Deep Scan)",
+                    "加入重点观察名单 (Watchlist)"
+                ]
+
+                if expert_action_key not in st.session_state:
+                    st.session_state[expert_action_key] = expert_actions[0]
+
                 st.divider()
 
-                col_btn1, col_btn2, _ = st.columns([2, 3, 5])
-                
-                with col_btn1:
-                    if st.button("✖️ 关闭详情", key="close_detail"):
-                        st.session_state.view_detail_alarm = None
-                        st.rerun()
-                
-                # 记录按钮的点击状态，不要在局部列(Column)内部直接渲染内容
-                agent_clicked = False
-                with col_btn2:
-                    if st.button("🤖 交由 Agent 单独研判与处置", type="primary", key="single_agent_process"):
-                        agent_clicked = True
-                
-                # ==========================================
-                # 核心修复点：跳出 col_btn2 的狭窄列宽限制
-                # 在最外层的全宽容器中进行渲染
-                # ==========================================
-                if agent_clicked:
-                    st.divider()
-                    with st.spinner("🧠 Agent 正在研判..."):
-                        is_mal, conf = ml_engine.predict_traffic(selected_alarm.get("features", {}))
-                        ml_res_dict = {"is_malicious": is_mal, "confidence": round(conf * 100 if is_mal else (1 - conf) * 100, 1), "rule_hit": selected_alarm.get("rule_hit")}
-                        analysis_text, agent_decision = analyze_event(selected_alarm, ml_result=ml_res_dict)
-                        
-                    with st.container(border=True):
-                        st.markdown("##### 📋 Agent 研判报告")
-                        st.markdown(analysis_text)
-                    
-                    if agent_decision:
-                        playbook = agent_decision.get("playbook_name")
-                        action_result = execute_action(selected_alarm, playbook)
-                        save_audit(selected_alarm, action_result, f"单次审核触发: {playbook}")
-                        st.success(f"✅ 动作已执行: {action_result['action']}")
+                # ==================================================
+                # 第二阶段：Agent 辅助决策
+                # ==================================================
+                st.markdown("##### ② Agent 辅助研判")
+                st.info(
+                    "Agent 只提供分析和处置建议，不会在此阶段执行任何动作。"
+                    "最终决策必须由人工专家确认。"
+                )
+
+                if st.button(
+                    "🤖 请求 Agent 进行辅助决策",
+                    key=f"agent_button::{alarm_identity}",
+                    type="secondary",
+                    use_container_width=True
+                ):
+                    ml_result = {
+                        "is_malicious": is_mal,
+                        "confidence": knn_confidence,
+                        "rule_hit": rule_hit
+                    }
+
+                    try:
+                        with st.spinner(
+                            "Agent 正在检索人工经验并进行融合研判..."
+                        ):
+                            # 1. 获取当前告警所属攻击家族
+                            event_family = (
+                                kb_engine._infer_event_family(
+                                    selected_alarm.get(
+                                        "event",
+                                        "未知告警"
+                                    )
+                                )
+                            )
+
+                            # 2. 从 ChromaDB 检索同攻击家族案例
+                            similar_cases = (
+                                kb_engine.query_similar_cases(
+                                    selected_alarm,
+                                    n_results=5
+                                )
+                            )
+
+                            # 3. 将 KNN、RAG 案例和攻击家族交给 Agent
+                            analysis_text, agent_decision = analyze_event(
+                                selected_alarm,
+                                ml_result=ml_result,
+                                similar_cases=similar_cases,
+                                event_family=event_family
+                            )
+
+                        # 4. 将分析结果和检索案例保存在页面状态中
+                        st.session_state[agent_result_key] = {
+                            "analysis": analysis_text,
+                            "decision": agent_decision,
+                            "similar_cases": similar_cases
+                        }
+
+                        # 将 Agent 建议转换为人工表单中的候选动作
+                        playbook_action_map = {
+                            "playbook_low_risk":
+                                "加入重点观察名单 (Watchlist)",
+                            "playbook_medium_risk":
+                                "封禁攻击源 IP (Block IP)",
+                            "playbook_high_risk":
+                                "封禁攻击源 IP (Block IP)"
+                        }
+
+                        if agent_decision:
+                            suggested_action = playbook_action_map.get(
+                                agent_decision.get("playbook_name")
+                            )
+                            if suggested_action:
+                                st.session_state[expert_action_key] = suggested_action
+
+                    except Exception as exc:
+                        st.session_state.pop(agent_result_key, None)
+                        st.error(f"Agent 辅助研判失败：{exc}")
+
+                agent_result = st.session_state.get(agent_result_key)
+
+
+
+
+                if agent_result:
+                    retrieved_cases = agent_result.get(
+                        "similar_cases",
+                        []
+                    )
+
+                    if retrieved_cases:
+                        st.success(
+                            f"📚 已检索到 "
+                            f"{len(retrieved_cases)} 条"
+                            f"同攻击家族且通过距离门槛的人工案例"
+                        )
+
+                        with st.expander(
+                            "查看本次 Agent 使用的"
+                            "同攻击家族人工案例"
+                        ):
+                            for case_index, case in enumerate(
+                                retrieved_cases,
+                                start=1
+                            ):
+                                st.markdown(
+                                    f"""
+**案例 {case_index}：{case.get("case_id", "未知")}**
+
+- 历史告警：{case.get("level", "未知")} - {case.get("event", "未知")}
+- 攻击家族：{case.get("event_family", "未知")}
+- 人工最终动作：{case.get("action", "未知")}
+- 人工决策理由：{case.get("reason", "未记录")}
+- 相似距离：{case.get("similarity_distance", "未知")}
+- 决策时间：{case.get("timestamp", "未知")}
+"""
+                                )
+
+                                st.divider()
+
                     else:
-                        st.warning("无需防御指令。")
+                        st.warning(
+                            "📚 当前知识库没有符合条件的"
+                            "同攻击家族历史案例。"
+                            "Agent 不得使用其他攻击家族的经验"
+                            "覆盖本次 KNN 判断。"
+                        )
+
+                    st.markdown("###### Agent 分析报告")
+
+                    st.markdown(agent_result.get("analysis", "未生成分析报告"))
+
+                    agent_decision = agent_result.get("decision")
+
+                    if agent_decision:
+                        playbook_labels = {
+                            "playbook_low_risk": "低风险观察",
+                            "playbook_medium_risk": "中风险封禁",
+                            "playbook_high_risk": "高风险隔离"
+                        }
+
+                        playbook_name = agent_decision.get("playbook_name")
+                        target_ip = agent_decision.get(
+                            "target_ip",
+                            selected_alarm.get("source_ip", "")
+                        )
+
+                        st.warning(
+                            f"Agent 建议："
+                            f"【{playbook_labels.get(playbook_name, playbook_name)}】；"
+                            f"目标 IP：{target_ip}"
+                        )
+                    else:
+                        st.warning("Agent 已完成分析，但没有生成明确的处置建议。")
+
+                    st.caption(
+                        "以上内容仅供专家参考，尚未执行任何封禁、隔离或放行动作。"
+                    )
+
+                st.divider()
+
+                # ==================================================
+                # 第三阶段：人工专家最终决策
+                # ==================================================
+                st.markdown("##### ③ 专家最终决策 (Human-in-the-Loop)")
+                st.info(
+                    "Agent 建议会预填到处置动作中，但专家可以修改。"
+                    "只有提交本表单后才会执行最终动作并写入知识库。💡 在此提交的处置动作与理由，将被向量化存入知识库。Agent 将在未来的自动化研判中学习并复用这些人类经验。"
+                )
+
+                
+                # 使用 st.form 避免在输入文字时触发页面频繁刷新
+                with st.form(key="expert_decision_form"):
+                    decision_action = st.selectbox(
+                        "1. 请选择最终处置动作：",
+                        expert_actions,
+                        key=expert_action_key,
+                        help="Agent 建议仅作为默认选项，专家可以自由修改。"
+                    )
+                    
+                    decision_reason = st.text_area(
+                        "2. 请填写研判理由 (Agent 学习的核心依据)：", 
+                        placeholder="例如：虽然流量较大，但属于大促期间正常比例，且无恶意 Payload，判定为误报。请放心放行。"
+                    )
+                    
+                    col_submit, col_close = st.columns([3, 1])
+                    with col_submit:
+                        submit_decision = st.form_submit_button(
+                            "✅ 确认并执行人工最终决策",
+                            type="primary"
+                        )
+                    with col_close:
+                        close_btn = st.form_submit_button("✖️ 关闭详情")
+
+                # 表单提交后的处理逻辑
+                if submit_decision:
+                    if not decision_reason.strip():
+                        st.error(
+                            "⚠️ 请务必填写研判理由！"
+                            "这是 Agent 未来推理的重要上下文。"
+                        )
+
+                    else:
+                        with st.spinner(
+                            "📦 正在向量化专家经验并写入数据库..."
+                        ):
+
+                            # ==========================================
+                            # 1. 获取本次 Agent 辅助研判结果
+                            # ==========================================
+                            agent_reference = (
+                                st.session_state.get(
+                                    agent_result_key
+                                )
+                            )
+
+                            agent_decision_for_kb = {}
+
+                            if agent_reference:
+                                agent_decision_for_kb = (
+                                    agent_reference.get(
+                                        "decision"
+                                    )
+                                    or {}
+                                )
+
+                            # ==========================================
+                            # 2. 构造本次 KNN / 规则结果
+                            # ==========================================
+                            ml_result_for_kb = {
+                                "is_malicious":
+                                    is_mal,
+
+                                "confidence":
+                                    knn_confidence,
+
+                                "rule_hit":
+                                    rule_hit
+                            }
+
+                            # ==========================================
+                            # 3. 写入 V2 ChromaDB 专家知识库
+                            # ==========================================
+                            doc_id = kb_engine.add_decision(
+                                alarm=selected_alarm,
+
+                                action=decision_action,
+
+                                reason=decision_reason,
+
+                                ml_result=
+                                    ml_result_for_kb,
+
+                                agent_decision=
+                                    agent_decision_for_kb,
+
+                                # 当前界面尚未增加
+                                # “人工最终风险判断”控件，
+                                # 所以暂时标为 uncertain
+                                final_verdict=
+                                    "uncertain",
+
+                                # 当前是人工主动提交，
+                                # Step 1 暂时认为已经审核
+                                review_status=
+                                    "approved",
+
+                                # 实际处置效果暂未反馈
+                                outcome_status=
+                                    "unknown"
+                            )
+
+                            # ==========================================
+                            # 4. 执行人工最终指定的防御动作
+                            # ==========================================
+                            action_result = (
+                                execute_human_decision(
+                                    selected_alarm,
+                                    decision_action
+                                )
+                            )
+
+                            # ==========================================
+                            # 5. 获取 Agent 分析文本用于审计
+                            # ==========================================
+                            agent_reference_text = (
+                                agent_reference.get(
+                                    "analysis",
+                                    ""
+                                )
+                                if agent_reference
+                                else
+                                "本次未调用 Agent 辅助研判"
+                            )
+
+                            # ==========================================
+                            # 6. 保存审计记录
+                            # ==========================================
+                            save_audit(
+                                selected_alarm,
+                                action_result,
+                                (
+                                    f"人工最终决策: "
+                                    f"{decision_action}\n"
+                                    f"Agent参考意见: "
+                                    f"{agent_reference_text}"
+                                )
+                            )
+
+                        st.success(
+                            f"✅ 专家经验已成功沉淀至知识库！"
+                            f"(记录 ID: {doc_id})"
+                        )
+
+                        st.balloons()
+
+                if close_btn:
+                    st.session_state.view_detail_alarm = None
+                    st.rerun()
+                    
         st.markdown("---")
 
     with st.expander("查看原始所有告警数据 (Raw Logs)"):
