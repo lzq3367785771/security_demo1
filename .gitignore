@@ -12,3 +12,6 @@ data/dynamic_logs.jsonl
 
 # Local embedding model
 all-MiniLM-L6-v2/
+
+# Local secrets
+config/config.py
