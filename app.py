@@ -524,8 +524,11 @@ elif menu == "二、安全告警中心":
                 # ==================================================
                 st.markdown("##### ③ 专家最终决策 (Human-in-the-Loop)")
                 st.info(
-                    "Agent 建议会预填到处置动作中，但专家可以修改。"
-                    "只有提交本表单后才会执行最终动作并写入知识库。💡 在此提交的处置动作与理由，将被向量化存入知识库。Agent 将在未来的自动化研判中学习并复用这些人类经验。"
+                    "Agent 建议仅作为参考，专家可以修改最终处置动作。"
+                    "人工提交后，案例会保存至 ChromaDB。"
+                    "只有专家明确勾选“审核通过，允许 Agent 使用”后，"
+                    "该案例才会成为后续 RAG 可检索的专家经验；"
+                    "未审核案例将以 pending 状态保存，不参与 Agent 研判。"
                 )
 
                 
@@ -539,10 +542,36 @@ elif menu == "二、安全告警中心":
                     )
                     
                     decision_reason = st.text_area(
-                        "2. 请填写研判理由 (Agent 学习的核心依据)：", 
-                        placeholder="例如：虽然流量较大，但属于大促期间正常比例，且无恶意 Payload，判定为误报。请放心放行。"
+                        "2. 请填写研判理由（专家经验核心依据）：",
+                        placeholder=(
+                            "例如：虽然流量较大，但属于大促期间正常比例，"
+                            "且无恶意 Payload，判定为误报。"
+                        )
                     )
-                    
+
+                    # ==========================================
+                    # 专家知识准入控制
+                    # ==========================================
+                    allow_agent_learning = st.checkbox(
+                        "3. 审核通过：允许 Agent 将本案例作为历史专家经验使用",
+                        value=False,
+                        help=(
+                            "勾选后，本案例 review_status = approved，"
+                            "可参与后续 RAG 检索；"
+                            "不勾选则保存为 pending，"
+                            "案例仍会保存在知识库中，但 Agent 暂时无法使用。"
+                        )
+                    )
+
+                    if allow_agent_learning:
+                        st.success(
+                            "✅ 本案例提交后将进入 Agent 可用专家知识集。"
+                        )
+                    else:
+                        st.info(
+                            "ℹ️ 本案例会保存，但状态为 pending，"
+                            "暂不参与 Agent 的 RAG 学习。"
+                        )
                     col_submit, col_close = st.columns([3, 1])
                     with col_submit:
                         submit_decision = st.form_submit_button(
@@ -599,7 +628,16 @@ elif menu == "二、安全告警中心":
                             }
 
                             # ==========================================
-                            # 3. 写入 V2 ChromaDB 专家知识库
+                            # 3. 根据人工勾选结果确定知识审核状态
+                            # ==========================================
+                            review_status_for_kb = (
+                                "approved"
+                                if allow_agent_learning
+                                else "pending"
+                            )
+
+                            # ==========================================
+                            # 4. 写入 V2 ChromaDB 专家知识库
                             # ==========================================
                             doc_id = kb_engine.add_decision(
                                 alarm=selected_alarm,
@@ -614,18 +652,17 @@ elif menu == "二、安全告警中心":
                                 agent_decision=
                                     agent_decision_for_kb,
 
-                                # 当前界面尚未增加
-                                # “人工最终风险判断”控件，
-                                # 所以暂时标为 uncertain
+                                # 当前尚未增加独立的
+                                # 人工最终风险判定控件
                                 final_verdict=
                                     "uncertain",
 
-                                # 当前是人工主动提交，
-                                # Step 1 暂时认为已经审核
+                                # 不再默认 approved，
+                                # 由专家主动决定
                                 review_status=
-                                    "approved",
+                                    review_status_for_kb,
 
-                                # 实际处置效果暂未反馈
+                                # 实际处置结果尚未验证
                                 outcome_status=
                                     "unknown"
                             )
@@ -667,12 +704,25 @@ elif menu == "二、安全告警中心":
                                 )
                             )
 
-                        st.success(
-                            f"✅ 专家经验已成功沉淀至知识库！"
-                            f"(记录 ID: {doc_id})"
-                        )
+                        if (
+                            review_status_for_kb
+                            == "approved"
+                        ):
+                            st.success(
+                                f"✅ 专家案例已保存并审核通过！"
+                                f"Agent 后续可通过 RAG 使用该经验。"
+                                f"（记录 ID: {doc_id}）"
+                            )
 
-                        st.balloons()
+                            st.balloons()
+
+                        else:
+                            st.warning(
+                                f"📦 专家案例已保存，"
+                                f"但当前状态为 pending。"
+                                f"Agent 暂时不会使用该经验。"
+                                f"（记录 ID: {doc_id}）"
+                            )
 
                 if close_btn:
                     st.session_state.view_detail_alarm = None
